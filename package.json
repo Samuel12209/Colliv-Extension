@@ -16,6 +16,10 @@
       {
         "command": "colliv.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "colliv.hostport",
+        "title": "Colliv hostport"
       }
     ]
   },
@@ -34,6 +38,7 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.96.0",
+    "@types/ws": "^8.5.13",
     "@typescript-eslint/eslint-plugin": "^8.17.0",
     "@typescript-eslint/parser": "^8.17.0",
     "@vscode/test-cli": "^0.0.10",
@@ -45,6 +50,7 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
+    "net": "^1.0.2",
     "ws": "^8.18.0"
   }
 }
