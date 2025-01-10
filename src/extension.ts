@@ -1,36 +1,59 @@
 import * as vscode from 'vscode';
 import * as net from 'net';
-import 'ws
-'
 
 export function activate(context: vscode.ExtensionContext) {
+    console.log('colliv is now active');
 
-	console.log('colliv is now active');
+    const hostport = vscode.commands.registerCommand('colliv.hostport', async () => {
+        const port = await vscode.window.showInputBox({
+            placeHolder: "Enter a port number (1-65535)",
+            validateInput: text => {
+                const num = Number(text);
+                if (isNaN(num)) {
+                    return "Please enter a valid number.";
+                }
+                if (num < 1 || num > 65535) {
+                    return "Number must be between 1 and 65535.";
+                }
+                return null;
+            }
+        });
 
-	const disposable = vscode.commands.registerCommand('colliv.helloWorld', () => {
+        if (port) {
+            checkPort(Number(port))
+                .then(isAvailable => {
+                    if (isAvailable) {
+                        vscode.window.showInformationMessage(`Port ${port} is available.`);
+                    } else {
+                        vscode.window.showErrorMessage(`Port ${port} is in use.`);
+                    }
+                })
+                .catch(err => vscode.window.showErrorMessage(`Error checking port: ${err.message}`));
+        }
+    });
 
-		vscode.window.showInformationMessage('Hello World from Colliv!');
-	});
+    context.subscriptions.push(hostport);
+}
 
-	const hostport = vscode.commands.registerCommand('colliv.hostport', () => {
+function checkPort(port: number): Promise<boolean> {
+    return new Promise(resolve => {
+        const server = net.createServer();
 
-		vscode.window.showInputBox({
-			placeHolder: "3000",
-			validateInput: text => {
-				const num = Number(text);
-				if (isNaN(num)) {
-					return "Please enter a valid number.";
-				}
-				if (num <= 1 || num >= 5000) {
-					return "Number must be greater than 1 and less than 5000.";
-				}
-				return null;
-			
-		  }});
-	});
+        server.once('error', (err: any) => {
+            if (err.code === 'EADDRINUSE') {
+                resolve(false); // Port is in use
+            } else {
+                vscode.window.showErrorMessage(`Unexpected error: ${err.message}`);
+            }
+        });
 
-	context.subscriptions.push(disposable);
-	context.subscriptions.push(hostport);
+        server.once('listening', () => {
+            server.close();
+            resolve(true);
+        });
+
+        server.listen(port, '127.0.0.1');
+    });
 }
 
 export function deactivate() {}
