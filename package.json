@@ -13,7 +13,6 @@
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
-
       {
         "command": "colliv.ServerStart",
         "title": "Colliv ServerStart"
@@ -48,6 +47,7 @@
   },
   "dependencies": {
     "net": "^1.0.2",
+    "ngrok": "^5.0.0-beta.2",
     "ws": "^8.18.0"
   }
 }

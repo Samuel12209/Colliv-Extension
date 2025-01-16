@@ -1,6 +1,8 @@
 import * as vscode from 'vscode';
 import * as net from 'net';
 import * as http from 'http';
+import * as ngrok from 'ngrok';
+
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('colliv is now active Bigmans');
@@ -57,17 +59,26 @@ function checkPort(port: number): Promise<boolean> {
     });
 }
 
-function startServer(port: number) {
+
+async function startServer(port: number) {
     const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('Colliv Server Running!');
     });
 
-    server.listen(port, '127.0.0.1', () => {
-        vscode.window.showInformationMessage(`Server running at http://localhost:${port}`);
+    server.listen(port, '127.0.0.1', async () => {
+        try {
+            const url = await ngrok.connect(port);
+            vscode.window.showInformationMessage(
+                `Server link: ${url}\n Share this URL To who you want to collaberate with`
+            );
+        } catch (err) {
+            vscode.window.showErrorMessage(`Failed to create tunnel: ${err.message}`);
+        }
     });
 
     return server;
 }
+
 
 export function deactivate() {}
