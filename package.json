@@ -23,6 +23,14 @@
       {
         "command": "colliv.joinSession",
         "title": "Join Colliv Session"
+      },
+      {
+        "command": "colliv.stopSession",
+        "title": "Stop Hosting Colliv Session"
+      },
+      {
+        "command": "colliv.leaveSession",
+        "title": "Leave Colliv Session"
       }
     ]
   },
