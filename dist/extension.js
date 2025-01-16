@@ -32,103 +32,71 @@ var __importStar = (this && this.__importStar) || (function () {
         return result;
     };
 })();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
-const http = __importStar(require("http"));
-const WebSocket = __importStar(require("ws"));
-const net = __importStar(require("net"));
+const ws_1 = __importDefault(require("ws")); // Default import
+let wsServer = null;
+let wsClient = null;
+let isHosting = false;
 function activate(context) {
-    console.log('Colliv extension is now active!');
-    const hostport = vscode.commands.registerCommand('colliv.ServerStart', async () => {
-        // Prompt for port
-        const port = await vscode.window.showInputBox({
-            placeHolder: "Enter a port number (1-65535) to host",
-            validateInput: text => {
-                const num = Number(text);
-                if (isNaN(num)) {
-                    return "Please enter a valid number.";
-                }
-                if (num < 1 || num > 65535) {
-                    return "Number must be between 1 and 65535.";
-                }
-                return null;
-            }
-        });
-        if (port) {
-            checkPort(Number(port))
-                .then(async (isAvailable) => {
-                if (isAvailable) {
-                    await startServer(Number(port));
-                }
-                else {
-                    vscode.window.showErrorMessage(`Port ${port} is in use.`);
-                }
-            })
-                .catch(err => vscode.window.showErrorMessage(`Error checking port: ${err.message}`));
+    const startServerCommand = vscode.commands.registerCommand('colliv.startServer', () => {
+        if (isHosting) {
+            vscode.window.showInformationMessage('You are already hosting a session.');
+            return;
         }
+        // Start WebSocket server
+        const portNum = 5000;
+        const ip = '127.0.0.1'; // Localhost
+        wsServer = new ws_1.default.Server({ host: ip, port: portNum });
+        wsServer.on('connection', (socket) => {
+            vscode.window.showInformationMessage('A client has joined the session.');
+            socket.on('message', (message) => {
+                console.log(`Received message: ${message}`);
+            });
+        });
+        wsServer.on('listening', () => {
+            vscode.window.showInformationMessage(`Server running on ws://${ip}:${portNum}. Anyone with this IP and port can connect!`);
+        });
+        isHosting = true;
     });
-    context.subscriptions.push(hostport);
-}
-function checkPort(port) {
-    return new Promise(resolve => {
-        const server = net.createServer();
-        server.once('error', (err) => {
-            if (err.code === 'EADDRINUSE') {
-                resolve(false);
+    const joinSessionCommand = vscode.commands.registerCommand('colliv.joinSession', async () => {
+        if (isHosting) {
+            vscode.window.showInformationMessage('You cannot join a session while hosting.');
+            return;
+        }
+        const ip = await vscode.window.showInputBox({ prompt: 'Enter the server IP to join' });
+        const port = await vscode.window.showInputBox({ prompt: 'Enter the server port' });
+        if (!ip || !port) {
+            vscode.window.showInformationMessage('Invalid IP or port.');
+            return;
+        }
+        wsClient = new ws_1.default(`ws://${ip}:${port}`);
+        wsClient.on('open', () => {
+            vscode.window.showInformationMessage('Connected to the session!');
+            if (wsClient) {
+                wsClient.send('Hello from the client!');
             }
-            else {
-                vscode.window.showErrorMessage(`Unexpected error: ${err.message}`);
-            }
         });
-        server.once('listening', () => {
-            server.close();
-            resolve(true);
+        wsClient.on('message', (message) => {
+            vscode.window.showInformationMessage(`Received: ${message}`);
         });
-        server.listen(port, '0.0.0.0');
-    });
-}
-async function startServer(port) {
-    const server = http.createServer((req, res) => {
-        res.writeHead(200, { 'Content-Type': 'text/plain' });
-        res.end('Colliv Server Running!');
-    });
-    // Create WebSocket server to accept other connections
-    const wss = new WebSocket.Server({ noServer: true });
-    // Handle WebSocket connections from clients (other users)
-    wss.on('connection', ws => {
-        console.log('New client connected');
-        ws.on('message', (message) => {
-            // Handle messages from clients here (file edits, etc.)
-            console.log(`Received message: ${message}`);
-        });
-        ws.send('Welcome to the Colliv Server!');
-    });
-    // Handle HTTP upgrade requests (for WebSocket)
-    server.on('upgrade', (request, socket, head) => {
-        wss.handleUpgrade(request, socket, head, (ws) => {
-            wss.emit('connection', ws, request);
+        wsClient.on('error', (error) => {
+            vscode.window.showInformationMessage(`Error: ${error}`);
         });
     });
-    // Get the public IP or public hostname
-    const publicIp = await getPublicIp();
-    // Listen on the specified port
-    server.listen(port, '0.0.0.0', () => {
-        const serverUrl = `ws://${publicIp}:${port}`;
-        vscode.window.showInformationMessage(`Server running globally at: ${serverUrl}\nShare this URL with anyone to collaborate!`);
-    });
-    return server;
-}
-// Function to get the public IP address of the machine (for WAN access)
-async function getPublicIp() {
-    // This can be an external service to get the public IP if not behind a NAT.
-    // For local testing, you can use a local network IP discovery
-    const fetch = require('node-fetch');
-    const res = await fetch('https://api.ipify.org?format=json');
-    const data = await res.json();
-    return data.ip || '127.0.0.1'; // fallback to localhost if no public IP is found
+    context.subscriptions.push(startServerCommand, joinSessionCommand);
 }
 function deactivate() {
+    if (wsServer) {
+        wsServer.close();
+    }
+    if (wsClient) {
+        wsClient.close();
+    }
 }
 //# sourceMappingURL=extension.js.map

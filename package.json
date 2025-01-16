@@ -1,7 +1,7 @@
 {
   "name": "colliv",
   "displayName": "Colliv",
-  "description": "Collaberate with others eaisly on the same file",
+  "description": "Collaborate with others easily on the same file",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.96.0"
@@ -9,13 +9,20 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:colliv.startServer",
+    "onCommand:colliv.joinSession"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
-        "command": "colliv.ServerStart",
-        "title": "Colliv ServerStart"
+        "command": "colliv.startServer",
+        "title": "Start Colliv Server"
+      },
+      {
+        "command": "colliv.joinSession",
+        "title": "Join Colliv Session"
       }
     ]
   },
