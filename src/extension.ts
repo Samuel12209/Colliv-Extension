@@ -1,13 +1,14 @@
 import * as vscode from 'vscode';
-import * as net from 'net';
 import * as http from 'http';
-import * as lt from 'localtunnel';
+import * as WebSocket from 'ws';
+import * as os from 'os';
+import * as net from 'net';
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('colliv is now active Bigmans');
+    console.log('Colliv extension is now active!');
 
     const hostport = vscode.commands.registerCommand('colliv.ServerStart', async () => {
-        // Then prompt for port
+        // Prompt for port
         const port = await vscode.window.showInputBox({
             placeHolder: "Enter a port number (1-65535) to host",
             validateInput: text => {
@@ -55,7 +56,7 @@ function checkPort(port: number): Promise<boolean> {
             resolve(true);
         });
 
-        server.listen(port, '127.0.0.1');
+        server.listen(port, '0.0.0.0');
     });
 }
 
@@ -65,19 +66,50 @@ async function startServer(port: number) {
         res.end('Colliv Server Running!');
     });
 
-    server.listen(port, '127.0.0.1', async () => {
-        try {
-            const tunnel = await lt({ port });
-            vscode.window.showInformationMessage(
-                `Server running globally at: ${tunnel.url}\nShare this URL with anyone worldwide!`
-            );
-        } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            vscode.window.showErrorMessage(`Failed to create tunnel: ${errorMessage}`);
-        }
+    // Create WebSocket server to accept other connections
+    const wss = new WebSocket.Server({ noServer: true });
+
+    // Handle WebSocket connections from clients (other users)
+    wss.on('connection', ws => {
+        console.log('New client connected');
+
+        ws.on('message', (message) => {
+            // Handle messages from clients here (file edits, etc.)
+            console.log(`Received message: ${message}`);
+        });
+
+        ws.send('Welcome to the Colliv Server!');
+    });
+
+    // Handle HTTP upgrade requests (for WebSocket)
+    server.on('upgrade', (request, socket, head) => {
+        wss.handleUpgrade(request, socket, head, (ws) => {
+            wss.emit('connection', ws, request);
+        });
+    });
+
+    // Get the public IP or public hostname
+    const publicIp = await getPublicIp();
+
+    // Listen on the specified port
+    server.listen(port, '0.0.0.0', () => {
+        const serverUrl = `ws://${publicIp}:${port}`;
+        vscode.window.showInformationMessage(
+            `Server running globally at: ${serverUrl}\nShare this URL with anyone to collaborate!`
+        );
     });
 
     return server;
+}
+
+// Function to get the public IP address of the machine (for WAN access)
+async function getPublicIp(): Promise<string> {
+    // This can be an external service to get the public IP if not behind a NAT.
+    // For local testing, you can use a local network IP discovery
+    const fetch = require('node-fetch');
+    const res = await fetch('https://api.ipify.org?format=json');
+    const data = await res.json();
+    return data.ip || '127.0.0.1'; // fallback to localhost if no public IP is found
 }
 
 export function deactivate() {
