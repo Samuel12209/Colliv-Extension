@@ -40,6 +40,8 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(require("vscode"));
 const ws_1 = __importDefault(require("ws")); // Default import
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
 let wsServer = null;
 let wsClient = null;
 let isHosting = false;
@@ -49,14 +51,29 @@ function activate(context) {
             vscode.window.showInformationMessage('You are already hosting a session.');
             return;
         }
-        // Start WebSocket server
         const portNum = 5000;
         const ip = '127.0.0.1'; // Localhost
         wsServer = new ws_1.default.Server({ host: ip, port: portNum });
         wsServer.on('connection', (socket) => {
             vscode.window.showInformationMessage('A client has joined the session.');
+            // Send initial files to the client
+            const files = fs.readdirSync(vscode.workspace.rootPath || '');
+            files.forEach((fileName) => {
+                const filePath = path.join(vscode.workspace.rootPath || '', fileName);
+                const fileContent = fs.readFileSync(filePath, 'utf-8');
+                socket.send(JSON.stringify({ type: 'file', fileName, fileContent }));
+            });
             socket.on('message', (message) => {
-                console.log(`Received message: ${message}`);
+                const parsedMessage = JSON.parse(message.toString());
+                if (parsedMessage.type === 'fileUpdate') {
+                    // Handle file update
+                    const filePath = path.join(vscode.workspace.rootPath || '', parsedMessage.fileName);
+                    fs.writeFileSync(filePath, parsedMessage.fileContent);
+                    vscode.window.showInformationMessage(`File ${parsedMessage.fileName} updated.`);
+                }
+            });
+            socket.on('close', () => {
+                vscode.window.showInformationMessage('A client has left the session.');
             });
         });
         wsServer.on('listening', () => {
@@ -83,13 +100,42 @@ function activate(context) {
             }
         });
         wsClient.on('message', (message) => {
-            vscode.window.showInformationMessage(`Received: ${message}`);
+            const parsedMessage = JSON.parse(message.toString());
+            if (parsedMessage.type === 'file') {
+                // Receive file and create a temporary file to open
+                const tempFilePath = path.join(vscode.workspace.rootPath || '', parsedMessage.fileName);
+                fs.writeFileSync(tempFilePath, parsedMessage.fileContent);
+                vscode.workspace.openTextDocument(tempFilePath).then(doc => {
+                    vscode.window.showTextDocument(doc);
+                });
+            }
+            else if (parsedMessage.type === 'fileUpdate') {
+                // Handle file update from the client
+                const filePath = path.join(vscode.workspace.rootPath || '', parsedMessage.fileName);
+                fs.writeFileSync(filePath, parsedMessage.fileContent);
+                vscode.window.showInformationMessage(`File ${parsedMessage.fileName} updated.`);
+            }
         });
         wsClient.on('error', (error) => {
             vscode.window.showInformationMessage(`Error: ${error}`);
         });
+        wsClient.on('close', () => {
+            vscode.window.showInformationMessage('Disconnected from the session.');
+        });
     });
-    context.subscriptions.push(startServerCommand, joinSessionCommand);
+    const stopSessionCommand = vscode.commands.registerCommand('colliv.stopSession', () => {
+        if (isHosting && wsServer) {
+            wsServer.close(() => {
+                vscode.window.showInformationMessage('Server session has been stopped.');
+            });
+            isHosting = false;
+        }
+        if (wsClient) {
+            wsClient.close(); // No callback function needed here
+            vscode.window.showInformationMessage('Disconnected from the session.');
+        }
+    });
+    context.subscriptions.push(startServerCommand, joinSessionCommand, stopSessionCommand);
 }
 function deactivate() {
     if (wsServer) {
