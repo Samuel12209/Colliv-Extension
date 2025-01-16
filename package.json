@@ -13,13 +13,10 @@
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
+
       {
-        "command": "colliv.helloWorld",
-        "title": "Hello World"
-      },
-      {
-        "command": "colliv.hostport",
-        "title": "Colliv hostport"
+        "command": "colliv.ServerStart",
+        "title": "Colliv ServerStart"
       }
     ]
   },

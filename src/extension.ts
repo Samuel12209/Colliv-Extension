@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 import * as net from 'net';
+import * as http from 'http';
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('colliv is now active');
+    console.log('colliv is now active Bigmans');
 
-    const hostport = vscode.commands.registerCommand('colliv.hostport', async () => {
+    const hostport = vscode.commands.registerCommand('colliv.ServerStart', async () => {
         const port = await vscode.window.showInputBox({
-            placeHolder: "Enter a port number (1-65535)",
+            placeHolder: "Enter a port number (1-65535) to host",
             validateInput: text => {
                 const num = Number(text);
                 if (isNaN(num)) {
@@ -23,7 +24,7 @@ export function activate(context: vscode.ExtensionContext) {
             checkPort(Number(port))
                 .then(isAvailable => {
                     if (isAvailable) {
-                        vscode.window.showInformationMessage(`Port ${port} is available.`);
+                        startServer(Number(port));
                     } else {
                         vscode.window.showErrorMessage(`Port ${port} is in use.`);
                     }
@@ -41,7 +42,7 @@ function checkPort(port: number): Promise<boolean> {
 
         server.once('error', (err: any) => {
             if (err.code === 'EADDRINUSE') {
-                resolve(false); // Port is in use
+                resolve(false); // Port is being used
             } else {
                 vscode.window.showErrorMessage(`Unexpected error: ${err.message}`);
             }
@@ -54,6 +55,19 @@ function checkPort(port: number): Promise<boolean> {
 
         server.listen(port, '127.0.0.1');
     });
+}
+
+function startServer(port: number) {
+    const server = http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('Colliv Server Running!');
+    });
+
+    server.listen(port, '127.0.0.1', () => {
+        vscode.window.showInformationMessage(`Server running at http://localhost:${port}`);
+    });
+
+    return server;
 }
 
 export function deactivate() {}

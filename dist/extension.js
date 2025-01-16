@@ -43,11 +43,12 @@ exports.activate = activate;
 exports.deactivate = deactivate;
 const vscode = __importStar(__webpack_require__(1));
 const net = __importStar(__webpack_require__(2));
+const http = __importStar(__webpack_require__(3));
 function activate(context) {
-    console.log('colliv is now active');
-    const hostport = vscode.commands.registerCommand('colliv.hostport', async () => {
+    console.log('colliv is now active Bigmans');
+    const hostport = vscode.commands.registerCommand('colliv.ServerStart', async () => {
         const port = await vscode.window.showInputBox({
-            placeHolder: "Enter a port number (1-65535)",
+            placeHolder: "Enter a port number (1-65535) to host",
             validateInput: text => {
                 const num = Number(text);
                 if (isNaN(num)) {
@@ -63,7 +64,7 @@ function activate(context) {
             checkPort(Number(port))
                 .then(isAvailable => {
                 if (isAvailable) {
-                    vscode.window.showInformationMessage(`Port ${port} is available.`);
+                    startServer(Number(port));
                 }
                 else {
                     vscode.window.showErrorMessage(`Port ${port} is in use.`);
@@ -79,7 +80,7 @@ function checkPort(port) {
         const server = net.createServer();
         server.once('error', (err) => {
             if (err.code === 'EADDRINUSE') {
-                resolve(false); // Port is in use
+                resolve(false); // Port is being used
             }
             else {
                 vscode.window.showErrorMessage(`Unexpected error: ${err.message}`);
@@ -91,6 +92,16 @@ function checkPort(port) {
         });
         server.listen(port, '127.0.0.1');
     });
+}
+function startServer(port) {
+    const server = http.createServer((req, res) => {
+        res.writeHead(200, { 'Content-Type': 'text/plain' });
+        res.end('Colliv Server Running!');
+    });
+    server.listen(port, '127.0.0.1', () => {
+        vscode.window.showInformationMessage(`Server running at http://localhost:${port}`);
+    });
+    return server;
 }
 function deactivate() { }
 
@@ -106,6 +117,12 @@ module.exports = require("vscode");
 /***/ ((module) => {
 
 module.exports = require("net");
+
+/***/ }),
+/* 3 */
+/***/ ((module) => {
+
+module.exports = require("http");
 
 /***/ })
 /******/ 	]);
