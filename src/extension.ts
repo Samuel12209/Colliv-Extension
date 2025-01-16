@@ -1,13 +1,13 @@
 import * as vscode from 'vscode';
 import * as net from 'net';
 import * as http from 'http';
-import * as ngrok from 'ngrok';
-
+import * as lt from 'localtunnel';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('colliv is now active Bigmans');
 
     const hostport = vscode.commands.registerCommand('colliv.ServerStart', async () => {
+        // Then prompt for port
         const port = await vscode.window.showInputBox({
             placeHolder: "Enter a port number (1-65535) to host",
             validateInput: text => {
@@ -24,9 +24,9 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (port) {
             checkPort(Number(port))
-                .then(isAvailable => {
+                .then(async isAvailable => {
                     if (isAvailable) {
-                        startServer(Number(port));
+                        await startServer(Number(port));
                     } else {
                         vscode.window.showErrorMessage(`Port ${port} is in use.`);
                     }
@@ -44,7 +44,7 @@ function checkPort(port: number): Promise<boolean> {
 
         server.once('error', (err: any) => {
             if (err.code === 'EADDRINUSE') {
-                resolve(false); // Port is being used
+                resolve(false);
             } else {
                 vscode.window.showErrorMessage(`Unexpected error: ${err.message}`);
             }
@@ -59,7 +59,6 @@ function checkPort(port: number): Promise<boolean> {
     });
 }
 
-
 async function startServer(port: number) {
     const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
@@ -68,17 +67,18 @@ async function startServer(port: number) {
 
     server.listen(port, '127.0.0.1', async () => {
         try {
-            const url = await ngrok.connect(port);
+            const tunnel = await lt({ port });
             vscode.window.showInformationMessage(
-                `Server link: ${url}\n Share this URL To who you want to collaberate with`
+                `Server running globally at: ${tunnel.url}\nShare this URL with anyone worldwide!`
             );
-        } catch (err) {
-            vscode.window.showErrorMessage(`Failed to create tunnel: ${err.message}`);
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            vscode.window.showErrorMessage(`Failed to create tunnel: ${errorMessage}`);
         }
     });
 
     return server;
 }
 
-
-export function deactivate() {}
+export function deactivate() {
+}
