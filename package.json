@@ -4,7 +4,7 @@
   "description": "Collaborate with others easily on the same file",
   "version": "0.0.1",
   "publisher": "Collive",
-  "icon": "https://raw.githubusercontent.com/samuel12209/Colliv-Extension/main/Assets/demo_pic.png",
+  "icon": "Assets/Collive.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/samuel12209/Colliv-Extension.git"
@@ -80,8 +80,8 @@
     "theme": "dark"
   },
   "screenshots": [
-    "https://raw.githubusercontent.com/samuel12209/Colliv-Extension/main/Assets/default_ip_demo.png",
-    "https://raw.githubusercontent.com/samuel12209/Colliv-Extension/main/Assets/default_port_demo.png",
-    "https://raw.githubusercontent.com/samuel12209/Colliv-Extension/main/Assets/demo_pic.png"
+    "Assets/default_ip_demo.png",
+    "Assets/default_port_demo.png",
+    "Assets/demo_pic.png"
   ]
 }
