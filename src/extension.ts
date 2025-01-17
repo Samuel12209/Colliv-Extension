@@ -1,17 +1,17 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import WebSocket from 'ws'; // Default import
+import WebSocket from 'ws';
 
 let wsServer: WebSocket.Server | null = null;
 let wsClient: WebSocket | null = null;
 let isHosting = false;
 let workspacePath: string | undefined;
 let saveTimeout: NodeJS.Timeout | null = null;
-const SAVE_DELAY = 100; // Save every 0.1 second
+const SAVE_DELAY = 100;
 
 export function activate(context: vscode.ExtensionContext) {
-    // Command to start the server (host session)
+
     const startServerCommand = vscode.commands.registerCommand('colliv.startServer', () => {
         if (isHosting) {
             vscode.window.showInformationMessage('You are already hosting a session.');
@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         const portNum = 5000;
-        const ip = '127.0.0.1'; // Localhost
+        const ip = '127.0.0.1';
 
         wsServer = new WebSocket.Server({ host: ip, port: portNum });
         isHosting = true;
@@ -27,18 +27,16 @@ export function activate(context: vscode.ExtensionContext) {
         wsServer.on('connection', (socket) => {
             vscode.window.showInformationMessage('A client has joined the session.');
 
-            // Send folder structure and files to client
             if (workspacePath) {
                 const files = getFilesRecursively(workspacePath);
                 socket.send(JSON.stringify({ type: 'fileSync', files }));
             }
 
-            // Handle incoming messages
             socket.on('message', (message) => {
                 const data = JSON.parse(message.toString());
                 if (data.type === 'fileUpdate' && workspacePath) {
                     const filePath = path.join(workspacePath, data.fileName);
-                    // Only write if the content is different to avoid overwriting client changes
+
                     const currentContent = fs.readFileSync(filePath, 'utf8');
                     if (currentContent !== data.content) {
                         fs.writeFileSync(filePath, data.content, 'utf8');
@@ -54,7 +52,6 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-    // Command to join a session (client)
     const joinSessionCommand = vscode.commands.registerCommand('colliv.joinSession', async () => {
         if (isHosting) {
             vscode.window.showInformationMessage('You cannot join a session while hosting.');
@@ -79,7 +76,7 @@ export function activate(context: vscode.ExtensionContext) {
             const data = JSON.parse(message.toString());
 
             if (data.type === 'fileSync' && workspacePath) {
-                // Download files from the host
+
                 data.files.forEach((file: any) => {
                     if (workspacePath) {
                         const filePath = path.join(workspacePath, file.path);
@@ -91,7 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
                 });
                 vscode.window.showInformationMessage('Files synced from the host!');
             } else if (data.type === 'fileUpdate' && workspacePath) {
-                // Update files based on host changes
+
                 const filePath = path.join(workspacePath, data.fileName);
                 fs.writeFileSync(filePath, data.content, 'utf8');
             }
@@ -102,7 +99,6 @@ export function activate(context: vscode.ExtensionContext) {
         });
     });
 
-    // Command to stop hosting
     const stopSessionCommand = vscode.commands.registerCommand('colliv.stopSession', () => {
         if (wsServer) {
             wsServer.close();
@@ -112,7 +108,6 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    // Command to leave a session
     const leaveSessionCommand = vscode.commands.registerCommand('colliv.leaveSession', () => {
         if (wsClient) {
             wsClient.close();
@@ -121,15 +116,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-    // Initialize workspace path
     workspacePath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
 
-    // Watch for file changes in the workspace to sync with the client
     if (workspacePath) {
         vscode.workspace.onDidChangeTextDocument((e) => {
             if (e.document.uri.scheme === 'file' && wsServer) {
                 const filePath = e.document.uri.fsPath;
-                const fileName = path.relative(workspacePath!, filePath); // Non-null assertion here
+                const fileName = path.relative(workspacePath!, filePath); 
                 const content = e.document.getText();
 
                 if (saveTimeout) {
@@ -157,7 +150,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(startServerCommand, joinSessionCommand, stopSessionCommand, leaveSessionCommand);
 }
 
-// Recursively get files from a directory
 function getFilesRecursively(dir: string): any[] {
     let results: any[] = [];
     const list = fs.readdirSync(dir);
