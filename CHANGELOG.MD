@@ -1,11 +1,8 @@
 ## Colliv Vscode Extension
-  ![Typescript](https://img.shields.io/badge/TypeScript-3178C6.svg?style=for-the-badge&logo=TypeScript&logoColor=white)
-
-  ![Vscode](https://img.shields.io/badge/VSCodium-2F80ED.svg?style=for-the-badge&logo=VSCodium&logoColor=white)
 
 ### Made for Collaberating Live with others
 
-  ![Colliv Demo](Assets/demo_pic.png)
+  ![Colliv Demo](https://raw.githubusercontent.com/Samuel12209/Colliv-Extension/refs/heads/main/Assets/demo_pic.png?token=GHSAT0AAAAAACP6DVELUUZGIOL4HUGJ6DQWZ4KYJVQ)
 ### Added So far:
 
 - **Initial release** of the Colliv extension for Visual Studio Code.
@@ -19,14 +16,16 @@
 ### How to Use
 1. **Start the server** (host a session) using the `colliv.startServer` command.
 2. **Join a session** as a client using the `colliv.joinSession` command.
+   
+   Use the default Ip 127.0.0.1
+
+   ![Default IP Demo](https://raw.githubusercontent.com/Samuel12209/Colliv-Extension/refs/heads/main/Assets/default_ip_demo.png?token=GHSAT0AAAAAACP6DVELKWEZMRBYZ7VTZMZ6Z4KYIPQ)
 
    Use the default port 5000
 
-   ![Default Port Demo](Assets/default_port_demo.png)
+   ![Default Port Demo](https://raw.githubusercontent.com/Samuel12209/Colliv-Extension/refs/heads/main/Assets/default_port_demo.png?token=GHSAT0AAAAAACP6DVELTRB26PNK4GLQULPEZ4KYJDA)
 
-   Use the default Ip 127.0.0.1
 
-   ![Default IP Demo](Assets/default_ip_demo.png)
 4. **Sync and edit files** in real-time between the host and client.
 
 
