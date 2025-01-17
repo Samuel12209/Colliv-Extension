@@ -5,7 +5,7 @@
 
 ### Made for Collaberating Live with others
 
-  ![Demo Screenshot](https://github.com/Samuel12209/Colliv-Extension/blob/main/Assets/demo_pic.png)
+  ![Colliv Demo](Assets/demo_pic.png)
 ### Added So far:
 
 - **Initial release** of the Colliv extension for Visual Studio Code.
@@ -22,11 +22,11 @@
 
    Use the default port 5000
 
-   ![default port](https://github.com/Samuel12209/Colliv-Extension/blob/main/Assets/default_port_demo.png)
+   ![Default Port Demo](Assets/default_port_demo.png)
 
    Use the default Ip 127.0.0.1
 
-   ![default_ip](https://github.com/Samuel12209/Colliv-Extension/blob/main/Assets/default_ip_demo.png)
+   ![Default IP Demo](Assets/default_ip_demo.png)
 4. **Sync and edit files** in real-time between the host and client.
 
 
